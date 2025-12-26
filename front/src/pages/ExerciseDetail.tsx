@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Code, FileText, ListChecks } from 'lucide-react';
-import Quiz from '../components/Quiz';
+import Quiz from '../components/Exercise/quiz';
 import CodeEditor from '../components/Exercise/MonacoEditor/MonacoEditor';
 import { exercisesApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -17,22 +17,16 @@ export default function ExerciseDetail() {
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
     const fetchExercise = async () => {
+      if (!isAuthenticated) {
+        navigate('/login');
+        return;
+      }
+
       try {
         setLoading(true);
-        const data = await exercisesApi.getAll();
-        const foundExercise = data?.find((ex: any) => ex.idExercice === id);
-
-        if (foundExercise) {
-          setExercise(foundExercise);
-        } else {
-          setError('Exercise not found');
-        }
+        const data = await exercisesApi.getById(Number(id));
+        setExercise(data);
       } catch (err: any) {
         setError(err.message);
       } finally {

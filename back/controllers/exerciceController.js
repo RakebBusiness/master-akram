@@ -1,6 +1,33 @@
 const exerciceModel = require('../model/exerciceModel');
 const etudiantModel = require('../model/etudiantModel');
 
+const transformExerciseData = (exercise) => {
+    if (!exercise) return null;
+
+    const transformed = {
+        idExercice: exercise.id?.toString(),
+        titre: exercise.title,
+        Type: exercise.type === 'qcm' ? 'Multiple choice' : exercise.type === 'quiz' ? 'Text Answer' : 'Code',
+        enonce: exercise.statement,
+        difficulte: exercise.difficulty,
+        dureeEstimee: exercise.estimated_duration,
+        idEnseignant: exercise.idenseignant,
+        idCours: exercise.idcours,
+    };
+
+    if (exercise.type === 'qcm' && exercise.options) {
+        transformed.options = exercise.options.map(opt => opt.option_text);
+        transformed.correctAnswer = exercise.options[exercise.correctOptionIndex]?.option_text;
+        transformed.correctOptionIndex = exercise.correctOptionIndex;
+    } else if (exercise.type === 'quiz') {
+        transformed.correctAnswer = exercise.answer;
+    } else if (exercise.type === 'code') {
+        transformed.tests = exercise.tests;
+    }
+
+    return transformed;
+};
+
 const exerciceController = {
     async getAllExercises(req, res) {
         try {
@@ -17,7 +44,8 @@ const exerciceController = {
                 exercises = await exerciceModel.findAll();
             }
 
-            res.json(exercises);
+            const transformedExercises = exercises.map(transformExerciseData);
+            res.json(transformedExercises);
         } catch (err) {
             console.error('Error fetching exercises:', err);
             res.status(500).json({ error: err.message });
@@ -33,7 +61,8 @@ const exerciceController = {
                 return res.status(404).json({ error: 'Exercise not found' });
             }
 
-            res.json(exercise);
+            const transformedExercise = transformExerciseData(exercise);
+            res.json(transformedExercise);
         } catch (err) {
             console.error('Error fetching exercise:', err);
             res.status(500).json({ error: err.message });
@@ -191,7 +220,8 @@ const exerciceController = {
         try {
             const userId = req.userId;
             const exercises = await exerciceModel.getEnrolledExercises(userId);
-            res.json(exercises);
+            const transformedExercises = exercises.map(transformExerciseData);
+            res.json(transformedExercises);
         } catch (err) {
             console.error('Error fetching enrolled exercises:', err);
             res.status(500).json({ error: err.message });
